@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    {% if token["status"] in ["waiting", "serving"] %}
-        <meta http-equiv="refresh" content="5">
-    {% endif %}
-
     <title>{{ token_number }} | Queue Busters</title>
+
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
+
+    <script defer
+            src="{{ url_for('static', filename='live.js') }}"></script>
 </head>
 <body>
     <header class="topbar">
@@ -19,6 +18,7 @@
                 <span class="brand-mark" aria-hidden="true">QB</span>
                 Queue Busters
             </a>
+
             <nav aria-label="Main navigation">
                 <a href="{{ url_for('home') }}">Services</a>
             </nav>
@@ -26,97 +26,24 @@
     </header>
 
     <main class="container narrow">
-        <section class="card token-card">
-            <p class="eyebrow">Your office token</p>
-            <h1 class="token-number">{{ token_number }}</h1>
-            <p>{{ service_name }}</p>
-            <span class="badge {{ token['status'] }}">
-                {{ token["status"] | capitalize }}
-            </span>
-        </section>
+        <div id="live-content"
+             data-updates-url="{{ url_for('token_updates', token_id=token['id']) }}">
+            {% include "_token_panel.html" %}
+        </div>
 
-        {% if token["status"] == "waiting" %}
-            <div class="stats">
-                <div class="stat">
-                    <span class="stat-label">Now serving</span>
-                    <strong class="stat-value">
-                        {% if current_token %}
-                            {{ "Q-%03d" | format(current_token["id"]) }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </strong>
-                    {% if not current_token %}
-                        <span class="muted">Counter is between turns</span>
-                    {% endif %}
-                </div>
+        <p id="connection-status" class="muted" role="status">
+            Automatic updates require JavaScript.
+        </p>
 
-                <div class="stat">
-                    <span class="stat-label">Your waiting position</span>
-                    <strong class="stat-value">{{ waiting_position }}</strong>
-                    <span class="muted">
-                        {{ students_ahead }} ahead, including anyone being served
-                    </span>
-                </div>
-            </div>
+        <p class="muted">
+            Checks every three seconds while this page is visible.
+            Keep it open to follow your turn.
+        </p>
 
-            <section class="card">
-                <h2>
-                    {% if students_ahead == 0 %}
-                        You are next in line
-                    {% else %}
-                        Your place is saved
-                    {% endif %}
-                </h2>
-                <p>
-                    {% if students_ahead == 0 %}
-                        Stay nearby. Come to the counter when your token is called.
-                    {% else %}
-                        Keep this page open to follow your turn.
-                        You do not need to stand in a physical line.
-                    {% endif %}
-                </p>
-                <p class="muted">
-                    Waiting position counts only waiting tokens.
-                    Completed and skipped tokens are excluded.
-                </p>
-            </section>
-
-        {% elif token["status"] == "serving" %}
-            <section class="card">
-                <p class="eyebrow">Now serving {{ token_number }}</p>
-                <h2>It is your turn!</h2>
-                <p>Please come to the office counter with your documents ready.</p>
-            </section>
-
-        {% elif token["status"] == "completed" %}
-            <section class="card">
-                <h2>Your service is complete</h2>
-                <p>Thank you for using Queue Busters.</p>
-                <a class="button secondary" href="{{ url_for('home') }}">
-                    Back to services
-                </a>
-            </section>
-
-        {% elif token["status"] == "skipped" %}
-            <section class="card">
-                <h2>Your turn was skipped</h2>
-                <p>
-                    When you are ready, request a new token.
-                    You will join at the back of the queue.
-                </p>
-                <a class="button" href="{{ url_for('home') }}">
-                    Choose a service
-                </a>
-            </section>
-        {% endif %}
-
-        {% if token["status"] in ["waiting", "serving"] %}
-            <p class="muted">
-                Updates every five seconds while connected.
-                Keep this page open to follow your token.
-            </p>
-        {% endif %}
+        <a class="button secondary"
+           href="{{ url_for('view_token', token_id=token['id']) }}">
+            Refresh now
+        </a>
     </main>
 
     <footer>PRAYAS · Queue Busters · Team 104</footer>

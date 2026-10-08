@@ -3,74 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choose a service | Queue Busters</title>
+
+    <meta name="theme-color" content="#122039">
+
+    <title>Choose your service | Queue Busters</title>
+
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+
+<body class="home-page">
+
+    {% macro icon(name) %}
+        <svg viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="1.7"
+             stroke-linecap="round"
+             stroke-linejoin="round"
+             aria-hidden="true">
+
+            {% if name == "bonafide" %}
+                <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                <path d="M14 3v6h6"/>
+                <path d="M8 13h8M8 17h5"/>
+
+            {% elif name == "fees" %}
+                <rect x="3" y="5" width="18" height="14" rx="3"/>
+                <path d="M3 10h18M7 15h3M15 15h2"/>
+
+            {% elif name == "exam" %}
+                <rect x="5" y="4" width="14" height="17" rx="2"/>
+                <path d="M9 4V2h6v2M9 9h6M9 13h6M9 17h3"/>
+
+            {% elif name == "verification" %}
+                <path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/>
+                <path d="m8 12 3 3 5-6"/>
+
+            {% elif name == "token" %}
+                <path d="M4 5h16v5a2 2 0 0 0 0 4v5H4v-5a2 2 0 0 0 0-4z"/>
+                <path d="M14 5v2M14 10v4M14 17v2"/>
+
+            {% elif name == "clock" %}
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 7v5l3 2"/>
+
+            {% elif name == "check" %}
+                <path d="m5 12 4 4L19 6"/>
+
+            {% elif name == "arrow" %}
+                <path d="M4 12h16m-6-6 6 6-6 6"/>
+
+            {% elif name == "phone" %}
+                <rect x="6" y="2" width="12" height="20" rx="3"/>
+                <path d="M10 5h4M11 18h2"/>
+
+            {% elif name == "people" %}
+                <circle cx="9" cy="8" r="3"/>
+                <path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M21 20v-2a6 6 0 0 0-3-5"/>
+
+            {% else %}
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 11v6M12 7h.01"/>
+            {% endif %}
+        </svg>
+    {% endmacro %}
+
     <header class="topbar">
         <div class="topbar-inner">
             <a class="brand" href="{{ url_for('home') }}">
                 <span class="brand-mark" aria-hidden="true">QB</span>
                 Queue Busters
             </a>
+
             <nav aria-label="Main navigation">
-                <a href="{{ url_for('staff_dashboard') }}">Staff dashboard</a>
+                <a href="#services">Get a token</a>
+                <a class="nav-pill"
+                   href="{{ url_for('staff_dashboard') }}">
+                    Staff access ↗
+                </a>
             </nav>
         </div>
     </header>
 
-    <main class="container narrow">
-        <section class="hero">
-            <p class="eyebrow">College office queue</p>
-            <h1>Your turn.<br>Without the line.</h1>
-            <p class="muted">
-                Choose your service, get a token, and follow your
-                queue position from this device.
-            </p>
-            <ol class="steps">
-                <li>Select a service</li>
-                <li>Get your token</li>
-                <li>Follow your turn</li>
-            </ol>
+    <main class="home-shell">
+
+        <section class="home-hero" aria-labelledby="hero-title">
+            <div class="hero-copy">
+                <div class="hero-tag">
+                    <span class="hero-tag-dot" aria-hidden="true"></span>
+                    A little less waiting in line
+                </div>
+
+                <h1 id="hero-title">
+                    Your turn.<br>
+                    <span>Without the line.</span>
+                </h1>
+
+                <p class="hero-description">
+                    College office visits, with a clearer next step.
+                    Pick your service, get a token, and follow your turn
+                    right from your phone.
+                </p>
+
+                <div class="hero-points">
+                    <span>{{ icon("check") }} No student sign-up</span>
+                    <span>{{ icon("check") }} Live queue updates</span>
+                    <span>{{ icon("check") }} One shared queue</span>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="journey-preview">
+                    <p class="preview-label">Your visit, simplified</p>
+
+                    <div class="preview-step">
+                        <span class="preview-step-icon">
+                            {{ icon("phone") }}
+                        </span>
+                        <div>
+                            <strong>Choose your service</strong>
+                            <small>Start from your phone</small>
+                        </div>
+                    </div>
+
+                    <div class="preview-connector" aria-hidden="true"></div>
+
+                    <div class="preview-step">
+                        <span class="preview-step-icon">
+                            {{ icon("token") }}
+                        </span>
+                        <div>
+                            <strong>Receive your token</strong>
+                            <small>Your place in the queue</small>
+                        </div>
+                    </div>
+
+                    <div class="preview-connector" aria-hidden="true"></div>
+
+                    <div class="preview-step">
+                        <span class="preview-step-icon">
+                            {{ icon("check") }}
+                        </span>
+                        <div>
+                            <strong>Follow your turn</strong>
+                            <small>Head over when called</small>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="preview-caption">
+                    How it works · illustrated journey
+                </p>
+            </div>
         </section>
 
-        {% if error %}
-            <div class="notice error" role="alert">{{ error }}</div>
-        {% endif %}
+        <section id="services"
+                 class="selection-section"
+                 aria-labelledby="services-title">
 
-        <section class="card">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Start here</p>
+                    <h2 id="services-title">What can we help you with?</h2>
+                    <p>Select one service to request your office token.</p>
+                </div>
+
+                <span class="section-counter">
+                    {{ services | length }} services
+                </span>
+            </div>
+
+            {% if error %}
+                <div class="notice error" role="alert">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            {% set descriptions = {
+                "bonafide": "Request a certificate confirming your student status.",
+                "fees": "Visit the office for questions about fees or payments.",
+                "exam": "Get help with examination forms and related queries.",
+                "verification": "Visit the office for document verification."
+            } %}
+
             <form action="{{ url_for('create_token') }}" method="post">
+
                 <fieldset>
-                    <legend>What brings you here?</legend>
+                    <legend class="visually-hidden">
+                        Choose your office service
+                    </legend>
 
                     <div class="service-grid">
                         {% for code, name in services.items() %}
-                            <label class="service-option">
+                            <label class="service-option"
+                                   data-service="{{ code }}">
+
                                 <input type="radio"
                                        name="service"
                                        value="{{ code }}"
                                        required>
-                                <span>{{ name }}</span>
+
+                                <span class="service-icon">
+                                    {{ icon(code) }}
+                                </span>
+
+                                <span class="service-copy">
+                                    <span class="service-name">
+                                        {{ name }}
+                                    </span>
+
+                                    <span class="service-description">
+                                        {{ descriptions.get(
+                                            code,
+                                            "Visit the college office for assistance."
+                                        ) }}
+                                    </span>
+                                </span>
                             </label>
                         {% endfor %}
                     </div>
                 </fieldset>
 
-                <button type="submit">Get my token →</button>
+                <div class="selection-bar">
+                    <div class="selection-hint">
+                        {{ icon("token") }}
+                        <div>
+                            <strong>One token. A clearer office visit.</strong>
+                            <span>
+                                Keep your token page open after submitting.
+                            </span>
+                        </div>
+                    </div>
+
+                    <button class="get-token-button" type="submit">
+                        Get my token
+                        {{ icon("arrow") }}
+                    </button>
+                </div>
             </form>
         </section>
 
-        <p class="muted">
-            All services currently share one queue and one counter.
-            Keep your token page open and stay nearby when your turn approaches.
-        </p>
-        <p class="muted">
-            Digital queuing helps reduce physical crowding.
-            Office processing time still depends on the service required.
-        </p>
+        <section class="info-grid" aria-label="Before your visit">
+
+            <div class="info-item">
+                <span class="info-icon">{{ icon("people") }}</span>
+                <div>
+                    <h3>A fair, shared queue</h3>
+                    <p>
+                        All services use one counter.
+                        Waiting tokens are called in the order issued.
+                    </p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <span class="info-icon">{{ icon("phone") }}</span>
+                <div>
+                    <h3>Stay nearby, stay informed</h3>
+                    <p>
+                        Follow your position on your token page
+                        and approach the counter when called.
+                    </p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <span class="info-icon">{{ icon("clock") }}</span>
+                <div>
+                    <h3>Less crowding, clearer updates</h3>
+                    <p>
+                        Digital tokens help organise waiting.
+                        Processing time still depends on your service.
+                    </p>
+                </div>
+            </div>
+
+        </section>
     </main>
 
-    <footer>PRAYAS · Queue Busters · Team 104</footer>
+    <footer class="home-footer">
+        <span>Queue Busters · Built for a better office visit</span>
+        <span>PRAYAS · Team 104</span>
+    </footer>
+
 </body>
 </html>

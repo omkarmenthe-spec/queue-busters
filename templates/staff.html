@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff dashboard | Queue Busters</title>
+
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
+
+    <script defer
+            src="{{ url_for('static', filename='live.js') }}"></script>
 </head>
 <body>
     <header class="topbar">
@@ -22,6 +26,7 @@
                     <input type="hidden"
                            name="csrf_token"
                            value="{{ csrf_token() }}">
+
                     <button class="secondary" type="submit">Log out</button>
                 </form>
             </div>
@@ -32,6 +37,7 @@
         <section class="hero">
             <p class="eyebrow">Office counter · Staff workspace</p>
             <h1>Keep the queue moving.</h1>
+
             <p class="muted">
                 Call the next waiting token, complete a service,
                 or skip an absent student.
@@ -50,113 +56,23 @@
             <div class="notice" role="status">{{ notices[notice] }}</div>
         {% endif %}
 
-        {% set waiting_tokens =
-            tokens | selectattr("status", "equalto", "waiting") | list %}
+        <p id="connection-status" class="muted" role="status">
+            Automatic updates require JavaScript.
+        </p>
 
-        <div class="stats">
-            <div class="stat">
-                <span class="stat-label">Waiting now</span>
-                <strong class="stat-value">{{ waiting_tokens | length }}</strong>
-            </div>
-
-            <div class="stat">
-                <span class="stat-label">Next waiting token</span>
-                <strong class="stat-value">
-                    {% if waiting_tokens %}
-                        {{ "Q-%03d" | format(waiting_tokens[0]["id"]) }}
-                    {% else %}
-                        —
-                    {% endif %}
-                </strong>
-            </div>
+        <div id="live-content"
+             data-updates-url="{{ url_for('staff_updates') }}">
+            {% include "_staff_panel.html" %}
         </div>
 
-        <section class="card">
-            <p class="eyebrow">Now serving</p>
-
-            {% if current_token %}
-                <h2 class="token-number">
-                    {{ "Q-%03d" | format(current_token["id"]) }}
-                </h2>
-                <p>{{ services[current_token["service"]] }}</p>
-
-                <div class="actions">
-                    <form method="post"
-                          action="{{ url_for('complete_token', token_id=current_token['id']) }}">
-                        <input type="hidden"
-                               name="csrf_token"
-                               value="{{ csrf_token() }}">
-                        <button type="submit">Complete service</button>
-                    </form>
-
-                    <form method="post"
-                          action="{{ url_for('skip_token', token_id=current_token['id']) }}"
-                          onsubmit="return confirm('Skip this absent student? They will need a new token to join at the back of the queue.');">
-                        <input type="hidden"
-                               name="csrf_token"
-                               value="{{ csrf_token() }}">
-                        <button class="danger" type="submit">Skip absent</button>
-                    </form>
-                </div>
-            {% else %}
-                <h2>Ready for the next student</h2>
-                <p class="muted">No token is currently being served.</p>
-
-                <form method="post" action="{{ url_for('call_next') }}">
-                    <input type="hidden"
-                           name="csrf_token"
-                           value="{{ csrf_token() }}">
-                    <button type="submit"
-                            {% if not waiting_tokens %}disabled{% endif %}>
-                        Call next token →
-                    </button>
-                </form>
-            {% endif %}
-        </section>
-
-        <section class="card">
-            <h2>Token register</h2>
-            <p class="muted">
-                All services share one queue. Waiting tokens are called
-                in the order they were issued.
-            </p>
-
-            {% if tokens %}
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th scope="col">Token</th>
-                                <th scope="col">Service</th>
-                                <th scope="col">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for token in tokens %}
-                                <tr>
-                                    <td>{{ "Q-%03d" | format(token["id"]) }}</td>
-                                    <td>{{ services[token["service"]] }}</td>
-                                    <td>
-                                        <span class="badge {{ token['status'] }}">
-                                            {{ token["status"] | capitalize }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p>No tokens yet. Students can request one from the student page.</p>
-            {% endif %}
-        </section>
-
-        <a class="button secondary" href="{{ url_for('staff_dashboard') }}">
-            Refresh dashboard
+        <a class="button secondary"
+           href="{{ url_for('staff_dashboard') }}">
+            Refresh now
         </a>
+
         <p class="muted" style="margin-top:16px;">
-            Refresh to see newly issued tokens.
-            Staff actions also reload the latest queue.
+            Queue information updates every three seconds while this page
+            is visible. Staff actions remain under your control.
         </p>
     </main>
 

@@ -8,6 +8,7 @@ from pathlib import Path
 from flask import (
     Flask,
     abort,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -39,14 +40,15 @@ if STAFF_CONFIG.exists():
         STAFF_CONFIG.read_text(encoding="utf-8")
     )
 
-# Staff access stays disabled until setup_staff.py has been run.
 STAFF_PASSWORD_HASH = staff_configuration.get("password_hash")
 
 app.config.update(
-    SECRET_KEY=staff_configuration.get("secret_key") or secrets.token_hex(32),
+    SECRET_KEY=(
+        staff_configuration.get("secret_key")
+        or secrets.token_hex(32)
+    ),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    # Local demo currently uses HTTP. Enable Secure when deploying with HTTPS.
     SESSION_COOKIE_SECURE=False,
     PERMANENT_SESSION_LIFETIME=timedelta(hours=1),
     SESSION_REFRESH_EACH_REQUEST=False,
@@ -55,6 +57,7 @@ app.config.update(
 
 
 def init_database():
+    """Create the table without deleting existing tokens."""
     with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS tokens (
@@ -68,7 +71,7 @@ def init_database():
 
 
 def csrf_token():
-    """Create a random security token for this browser session."""
+    """Security token used by staff forms."""
     if "csrf_token" not in session:
         session["csrf_token"] = secrets.token_hex(32)
 
@@ -80,7 +83,6 @@ app.jinja_env.globals["csrf_token"] = csrf_token
 
 @app.before_request
 def protect_staff_routes():
-    """Protect the dashboard and every staff action on the server."""
     is_staff_path = (
         request.path == "/staff"
         or request.path.startswith("/staff/")
@@ -99,6 +101,13 @@ def protect_staff_routes():
         )
 
     if request.endpoint != "staff_login" and not session.get("staff"):
+        # Live updates need a clear response when login expires.
+        if request.endpoint == "staff_updates":
+            return jsonify(
+                error="login_required",
+                login_url=url_for("staff_login"),
+            ), 401
+
         return redirect(url_for("staff_login"), code=303)
 
     if request.method == "POST":
@@ -123,7 +132,11 @@ def response_headers(response):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "same-origin"
 
-    if request.path == "/staff" or request.path.startswith("/staff/"):
+    if (
+        request.path == "/staff"
+        or request.path.startswith("/staff/")
+        or request.path.startswith("/tokens/")
+    ):
         response.headers["Cache-Control"] = "no-store"
 
     return response
@@ -163,7 +176,10 @@ def staff_logout():
 
 @app.get("/")
 def home():
-    return render_template("index.html", services=SERVICES)
+    return render_template(
+        "index.html",
+        services=SERVICES,
+    )
 
 
 @app.post("/tokens")
@@ -191,8 +207,8 @@ def create_token():
     )
 
 
-@app.get("/tokens/<int:token_id>")
-def view_token(token_id):
+def get_token_details(token_id):
+    """Read related queue information from one database snapshot."""
     with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
         connection.row_factory = sqlite3.Row
         connection.execute("BEGIN")
@@ -229,21 +245,38 @@ def view_token(token_id):
         waiting_position = waiting_before + 1
         students_ahead = waiting_before + int(current_token is not None)
 
+    return {
+        "token": token,
+        "token_number": f"Q-{token['id']:03d}",
+        "service_name": SERVICES[token["service"]],
+        "current_token": current_token,
+        "waiting_position": waiting_position,
+        "students_ahead": students_ahead,
+    }
+
+
+@app.get("/tokens/<int:token_id>")
+def view_token(token_id):
     return render_template(
         "token.html",
-        token=token,
-        token_number=f"Q-{token['id']:03d}",
-        service_name=SERVICES[token["service"]],
-        current_token=current_token,
-        waiting_position=waiting_position,
-        students_ahead=students_ahead,
+        **get_token_details(token_id),
     )
 
 
-@app.get("/staff")
-def staff_dashboard():
+@app.get("/tokens/<int:token_id>/updates")
+def token_updates(token_id):
+    """Return just the student queue panel for live updates."""
+    details = get_token_details(token_id)
+
+    return jsonify(
+        html=render_template("_token_panel.html", **details),
+    )
+
+
+def get_staff_details():
     with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
         connection.row_factory = sqlite3.Row
+
         tokens = connection.execute(
             "SELECT * FROM tokens ORDER BY id ASC"
         ).fetchall()
@@ -253,12 +286,35 @@ def staff_dashboard():
         None,
     )
 
+    waiting_tokens = [
+        token for token in tokens if token["status"] == "waiting"
+    ]
+
+    return {
+        "tokens": tokens,
+        "services": SERVICES,
+        "current_token": current_token,
+        "waiting_tokens": waiting_tokens,
+    }
+
+
+@app.get("/staff")
+def staff_dashboard():
     return render_template(
         "staff.html",
-        tokens=tokens,
-        services=SERVICES,
-        current_token=current_token,
         notice=request.args.get("notice"),
+        **get_staff_details(),
+    )
+
+
+@app.get("/staff/updates")
+def staff_updates():
+    """This endpoint is protected by the staff login check."""
+    return jsonify(
+        html=render_template(
+            "_staff_panel.html",
+            **get_staff_details(),
+        ),
     )
 
 
@@ -279,6 +335,7 @@ def call_next():
                 SELECT 1 FROM tokens WHERE status = 'serving'
             )
         """)
+
         called = cursor.rowcount == 1
         connection.commit()
 
@@ -301,6 +358,7 @@ def finish_current_token(token_id, new_status):
             """,
             (new_status, token_id),
         )
+
         changed = cursor.rowcount == 1
         connection.commit()
 
@@ -326,4 +384,4 @@ def skip_token(token_id):
 init_database()
 
 if __name__ == "__main__":
-    app.run(debug=True)   
+    app.run(debug=True)
