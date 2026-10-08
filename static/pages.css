@@ -1,0 +1,495 @@
+/* Additional styles for login, staff and student token pages. */
+
+.page-hero {
+    margin-bottom: 24px;
+}
+
+.page-hero h1 {
+    margin-bottom: 10px;
+}
+
+#connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    margin: 0 0 20px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 13px;
+}
+
+#connection-status::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--muted);
+}
+
+#connection-status.error {
+    border-color: var(--red);
+    color: var(--red);
+}
+
+#connection-status.error::before {
+    background: var(--red);
+}
+
+kbd {
+    padding: 2px 7px;
+    border: 1px solid var(--border);
+    border-bottom-width: 3px;
+    border-radius: 7px;
+    background: var(--surface);
+    font: 700 12px "DM Sans", sans-serif;
+}
+
+.topbar .actions {
+    gap: 14px;
+}
+
+.topbar .actions a {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.topbar .actions a:hover {
+    color: var(--primary);
+}
+
+.topbar .actions button.secondary {
+    min-height: 40px;
+    padding: 8px 16px;
+}
+
+.topbar .icon-btn {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.topbar .icon-btn:hover {
+    background: var(--soft);
+    color: var(--text);
+}
+
+.page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.page-note {
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.action-feedback {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.manual-link {
+    margin-top: 16px;
+}
+
+.manual-link label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.manual-link input {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+}
+
+/* Staff dashboard */
+
+.stats.four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.stat.accent {
+    background: #294bce;
+    border-color: #294bce;
+    color: #fff;
+}
+
+.stat.accent .stat-label {
+    color: #e3eaff;
+}
+
+.queue-strip-card {
+    padding: 20px 24px;
+}
+
+.queue-strip-card h3 {
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+
+.queue-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 2px 0 8px;
+}
+
+.chip {
+    flex: none;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--soft);
+    font: 800 15px Manrope, sans-serif;
+}
+
+.chip.first {
+    background: #294bce;
+    color: #fff;
+}
+
+.chip small {
+    display: block;
+    margin-top: 4px;
+    font: 500 12px "DM Sans", sans-serif;
+}
+
+.serving-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 24px;
+    align-items: center;
+    border-left: 6px solid var(--primary);
+}
+
+.serving-card.idle {
+    border-left-color: var(--border);
+}
+
+.serving-card .token-number {
+    margin: 4px 0;
+    text-align: left;
+}
+
+.serving-card p {
+    margin: 0 0 8px;
+}
+
+.big {
+    min-height: 58px;
+    padding: 14px 26px;
+    font-size: 17px;
+}
+
+.serving-actions {
+    display: grid;
+    gap: 12px;
+    min-width: 240px;
+}
+
+.serving-actions form {
+    margin: 0;
+}
+
+.serving-actions button {
+    width: 100%;
+}
+
+.row-current {
+    background: var(--soft);
+}
+
+.dot-live {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--primary);
+}
+
+/* Student token */
+
+.ticket-card {
+    position: relative;
+    overflow: hidden;
+    padding: 34px 28px 26px;
+    text-align: center;
+    background:
+        radial-gradient(
+            circle at 100% 0,
+            rgb(54 93 245 / 12%),
+            transparent 55%
+        ),
+        var(--surface);
+}
+
+.ticket-card .token-number {
+    margin: 6px 0 0;
+}
+
+.perf {
+    position: relative;
+    margin: 22px -28px;
+    border-top: 2px dashed var(--border);
+}
+
+.perf::before,
+.perf::after {
+    content: "";
+    position: absolute;
+    top: -14px;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--background);
+}
+
+.perf::before {
+    left: -14px;
+}
+
+.perf::after {
+    right: -14px;
+}
+
+.ticket-service-name {
+    margin: 0 0 12px;
+    font: 800 20px Manrope, sans-serif;
+}
+
+.lane {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 20px 0 10px;
+}
+
+.lane-counter {
+    padding: 6px 12px;
+    border-radius: 99px;
+    background: var(--soft);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.lane-dot {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border: 2px solid var(--primary);
+    border-radius: 50%;
+    background: var(--soft);
+}
+
+.lane-more {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.lane-you {
+    padding: 6px 14px;
+    border-radius: 99px;
+    background: #294bce;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.lane-caption {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.near-card {
+    border: 2px dashed var(--amber);
+}
+
+.turn-card {
+    border: 2px solid var(--primary);
+    text-align: center;
+    animation: turn-glow 1.8s ease-in-out 3;
+}
+
+.turn-card h2 {
+    font-size: 30px;
+}
+
+.done-card {
+    text-align: center;
+}
+
+/* Staff login */
+
+.auth-wrap {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.auth-side {
+    padding: 48px 40px;
+    background:
+        radial-gradient(circle at 90% 0, #27508a, transparent 50%),
+        #101b33;
+    color: #fff;
+}
+
+.auth-side h1 {
+    font-size: clamp(30px, 4vw, 42px);
+    letter-spacing: -1.6px;
+}
+
+.auth-side p {
+    color: #c2cfe2;
+}
+
+.auth-side ul {
+    display: grid;
+    gap: 12px;
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+    color: #d9e3ef;
+    font-size: 14px;
+}
+
+.auth-side li::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 12px;
+    border-radius: 50%;
+    background: var(--mint);
+}
+
+.auth-form {
+    align-self: center;
+    padding: 48px 40px;
+}
+
+.auth-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.input-row {
+    position: relative;
+}
+
+.input {
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 80px 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--background);
+    color: var(--text);
+}
+
+.input:focus {
+    border-color: var(--primary);
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.input-toggle {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    min-height: 38px;
+    padding: 6px 12px;
+    border-radius: 9px;
+    font-size: 13px;
+}
+
+.caps-warning {
+    display: none;
+    margin: 10px 0 0;
+    color: var(--amber);
+    font-size: 13px;
+}
+
+.caps-warning.show {
+    display: block;
+}
+
+.auth-form .button-full {
+    width: 100%;
+    margin-top: 18px;
+}
+
+button.is-loading {
+    opacity: 0.7;
+    cursor: progress;
+}
+
+@keyframes turn-glow {
+    50% {
+        box-shadow: 0 0 0 8px rgb(54 93 245 / 14%);
+    }
+}
+
+@media (max-width: 900px) {
+    .stats.four {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .serving-card,
+    .auth-wrap {
+        grid-template-columns: 1fr;
+    }
+
+    .serving-actions {
+        min-width: 0;
+    }
+
+    .auth-side,
+    .auth-form {
+        padding: 32px 24px;
+    }
+}
+
+@media (max-width: 420px) {
+    .stats.four {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .turn-card {
+        animation: none;
+    }
+}

@@ -4,63 +4,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff login | Queue Busters</title>
+
+    <script>
+        try {
+            const theme = localStorage.getItem("qb-theme");
+            if (theme === "light" || theme === "dark") {
+                document.documentElement.dataset.theme = theme;
+            }
+        } catch (error) {}
+    </script>
+
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='pages.css') }}">
+    <script defer
+            src="{{ url_for('static', filename='theme.js') }}"></script>
 </head>
-<body>
+
+<body class="home-page" data-page="login">
     <header class="topbar">
         <div class="topbar-inner">
             <a class="brand" href="{{ url_for('home') }}">
                 <span class="brand-mark" aria-hidden="true">QB</span>
                 Queue Busters
             </a>
+
             <nav aria-label="Main navigation">
+                <button type="button"
+                        id="theme-toggle"
+                        class="icon-btn"
+                        aria-label="Switch theme"
+                        aria-pressed="false">
+                    <svg viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.7"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>
+                    </svg>
+                </button>
+
                 <a href="{{ url_for('home') }}">Student page</a>
             </nav>
         </div>
     </header>
 
-    <main class="container narrow">
-        <section class="hero">
-            <p class="eyebrow">Office staff</p>
-            <h1>Welcome to your counter.</h1>
-            <p class="muted">
-                Sign in to manage the queue and update token status.
-            </p>
-        </section>
+    <main class="container">
+        <div class="auth-wrap">
+            <section class="auth-side">
+                <h1>Welcome to your counter.</h1>
+                <p>Sign in to manage the queue and update token status.</p>
 
-        <section class="card">
-            <h2>Staff login</h2>
+                <ul>
+                    <li>Call the next waiting token</li>
+                    <li>Complete a service or skip an absent student</li>
+                    <li>Watch the queue update live</li>
+                </ul>
+            </section>
 
-            {% if error %}
-                <div class="notice error" role="alert">{{ error }}</div>
-            {% endif %}
+            <section class="auth-form">
+                <h2>Staff login</h2>
 
-            <form method="post" action="{{ url_for('staff_login') }}">
-                <input type="hidden"
-                       name="csrf_token"
-                       value="{{ csrf_token() }}">
+                {% if error %}
+                    <div class="notice error" role="alert">
+                        {{ error }}
+                    </div>
+                {% endif %}
 
-                <p>
+                <form method="post"
+                      action="{{ url_for('staff_login') }}"
+                      id="login-form">
+
+                    <input type="hidden"
+                           name="csrf_token"
+                           value="{{ csrf_token() }}">
+
                     <label for="password">Staff password</label>
+
+                    <div class="input-row">
+                        <input id="password"
+                               class="input"
+                               name="password"
+                               type="password"
+                               autocomplete="current-password"
+                               aria-describedby="caps-warning"
+                               required>
+
+                        <button type="button"
+                                id="pw-toggle"
+                                class="secondary input-toggle"
+                                aria-label="Show password"
+                                aria-controls="password"
+                                aria-pressed="false">
+                            Show
+                        </button>
+                    </div>
+
+                    <p class="caps-warning"
+                       id="caps-warning"
+                       role="status">
+                        Caps Lock is on.
+                    </p>
+
+                    <button class="button-full big" type="submit">
+                        Log in
+                    </button>
+                </form>
+
+                <p class="page-note">
+                    Students can request tokens without logging in.
                 </p>
-
-                <p>
-                    <input id="password"
-                           name="password"
-                           type="password"
-                           autocomplete="current-password"
-                           required
-                           style="width:100%; padding:12px; border:1px solid #627087; border-radius:10px;">
-                </p>
-
-                <button type="submit">Log in →</button>
-            </form>
-        </section>
-
-        <p class="muted">
-            Students can request tokens without logging in.
-        </p>
+            </section>
+        </div>
     </main>
 
     <footer>PRAYAS · Queue Busters · Team 104</footer>

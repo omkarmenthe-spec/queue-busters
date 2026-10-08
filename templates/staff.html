@@ -5,13 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff dashboard | Queue Busters</title>
 
+    <script>
+        try {
+            const theme = localStorage.getItem("qb-theme");
+            if (theme === "light" || theme === "dark") {
+                document.documentElement.dataset.theme = theme;
+            }
+        } catch (error) {}
+    </script>
+
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='pages.css') }}">
 
     <script defer
             src="{{ url_for('static', filename='live.js') }}"></script>
+    <script defer
+            src="{{ url_for('static', filename='theme.js') }}"></script>
 </head>
-<body>
+
+<body class="home-page" data-page="staff">
     <header class="topbar">
         <div class="topbar-inner">
             <a class="brand" href="{{ url_for('home') }}">
@@ -20,27 +34,48 @@
             </a>
 
             <div class="actions">
+                <button type="button"
+                        id="theme-toggle"
+                        class="icon-btn"
+                        aria-label="Switch theme"
+                        aria-pressed="false">
+                    <svg viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.7"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>
+                    </svg>
+                </button>
+
                 <a href="{{ url_for('home') }}">Student page</a>
 
-                <form method="post" action="{{ url_for('staff_logout') }}">
+                <form method="post"
+                      action="{{ url_for('staff_logout') }}">
                     <input type="hidden"
                            name="csrf_token"
                            value="{{ csrf_token() }}">
-
-                    <button class="secondary" type="submit">Log out</button>
+                    <button class="secondary" type="submit">
+                        Log out
+                    </button>
                 </form>
             </div>
         </div>
     </header>
 
     <main class="container">
-        <section class="hero">
-            <p class="eyebrow">Office counter · Staff workspace</p>
+        <section class="page-hero">
+            <p class="eyebrow">Staff workspace</p>
             <h1>Keep the queue moving.</h1>
 
             <p class="muted">
-                Call the next waiting token, complete a service,
+                Call the next token, complete a service,
                 or skip an absent student.
+            </p>
+
+            <p class="muted">
+                Keyboard: press <kbd>N</kbd> to focus Call next
+                or <kbd>C</kbd> to focus Complete.
+                Press <kbd>Enter</kbd> to activate the focused button.
             </p>
         </section>
 
@@ -53,7 +88,9 @@
         } %}
 
         {% if notice in notices %}
-            <div class="notice" role="status">{{ notices[notice] }}</div>
+            <div class="notice" role="status">
+                {{ notices[notice] }}
+            </div>
         {% endif %}
 
         <p id="connection-status" class="muted" role="status">
@@ -65,14 +102,16 @@
             {% include "_staff_panel.html" %}
         </div>
 
-        <a class="button secondary"
-           href="{{ url_for('staff_dashboard') }}">
-            Refresh now
-        </a>
+        <div class="page-actions">
+            <a class="button secondary"
+               href="{{ url_for('staff_dashboard') }}">
+                Refresh now
+            </a>
+        </div>
 
-        <p class="muted" style="margin-top:16px;">
-            Queue information updates every three seconds while this page
-            is visible. Staff actions remain under your control.
+        <p class="page-note">
+            Queue information updates every three seconds while this
+            page is visible. Staff actions remain under your control.
         </p>
     </main>
 

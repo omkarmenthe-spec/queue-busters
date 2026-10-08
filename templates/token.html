@@ -5,13 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ token_number }} | Queue Busters</title>
 
+    <script>
+        try {
+            const theme = localStorage.getItem("qb-theme");
+            if (theme === "light" || theme === "dark") {
+                document.documentElement.dataset.theme = theme;
+            }
+        } catch (error) {}
+    </script>
+
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='pages.css') }}">
 
     <script defer
             src="{{ url_for('static', filename='live.js') }}"></script>
+    <script defer
+            src="{{ url_for('static', filename='theme.js') }}"></script>
 </head>
-<body>
+
+<body class="home-page" data-page="token">
     <header class="topbar">
         <div class="topbar-inner">
             <a class="brand" href="{{ url_for('home') }}">
@@ -20,30 +34,70 @@
             </a>
 
             <nav aria-label="Main navigation">
+                <button type="button"
+                        id="theme-toggle"
+                        class="icon-btn"
+                        aria-label="Switch theme"
+                        aria-pressed="false">
+                    <svg viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.7"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>
+                    </svg>
+                </button>
+
                 <a href="{{ url_for('home') }}">Services</a>
             </nav>
         </div>
     </header>
 
     <main class="container narrow">
+        <p id="connection-status" class="muted" role="status">
+            Automatic updates require JavaScript.
+        </p>
+
         <div id="live-content"
              data-updates-url="{{ url_for('token_updates', token_id=token['id']) }}">
             {% include "_token_panel.html" %}
         </div>
 
-        <p id="connection-status" class="muted" role="status">
-            Automatic updates require JavaScript.
+        <div class="page-actions">
+            <button type="button"
+                    class="secondary"
+                    id="copy-link">
+                Copy token link
+            </button>
+
+            <a class="button secondary"
+               href="{{ url_for('view_token', token_id=token['id']) }}">
+                Refresh now
+            </a>
+        </div>
+
+        <p id="copy-feedback"
+           class="action-feedback"
+           role="status"></p>
+
+        <div id="manual-link" class="manual-link" hidden>
+            <label for="token-link">Your token page address</label>
+            <input id="token-link"
+                   type="text"
+                   readonly
+                   spellcheck="false">
+        </div>
+
+        <p class="page-note">
+            Checks for updates every three seconds while visible.
+            Keep this page open to follow your turn.
         </p>
 
-        <p class="muted">
-            Checks every three seconds while this page is visible.
-            Keep it open to follow your turn.
-        </p>
-
-        <a class="button secondary"
-           href="{{ url_for('view_token', token_id=token['id']) }}">
-            Refresh now
-        </a>
+        <noscript>
+            <p class="notice">
+                JavaScript is disabled.
+                Use Refresh now to check your token.
+            </p>
+        </noscript>
     </main>
 
     <footer>PRAYAS · Queue Busters · Team 104</footer>

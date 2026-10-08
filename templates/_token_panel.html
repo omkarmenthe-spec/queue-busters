@@ -1,7 +1,10 @@
-<section class="card token-card">
+<section class="card ticket-card" data-state="{{ token['status'] }}">
     <p class="eyebrow">Your office token</p>
     <h1 class="token-number">{{ token_number }}</h1>
-    <p>{{ service_name }}</p>
+
+    <div class="perf" aria-hidden="true"></div>
+
+    <p class="ticket-service-name">{{ service_name }}</p>
 
     <span class="badge {{ token['status'] }}">
         {{ token["status"] | capitalize }}
@@ -26,24 +29,50 @@
             {% endif %}
         </div>
 
-        <div class="stat">
+        <div class="stat accent">
             <span class="stat-label">Your waiting position</span>
             <strong class="stat-value">{{ waiting_position }}</strong>
 
-            <span class="muted">
-                {{ students_ahead }} ahead, including anyone being served
+            <span class="stat-label">
+                {{ students_ahead }} ahead,
+                including anyone being served
             </span>
         </div>
     </div>
 
-    <section class="card">
+    <section class="card {% if students_ahead <= 1 %}near-card{% endif %}">
         <h2>
             {% if students_ahead == 0 %}
                 You are next in line
+            {% elif students_ahead == 1 %}
+                Almost your turn
             {% else %}
                 Your place is saved
             {% endif %}
         </h2>
+
+        <div class="lane" aria-hidden="true">
+            <span class="lane-counter">Counter</span>
+
+            {% for number in range([students_ahead, 5] | min) %}
+                <span class="lane-dot"></span>
+            {% endfor %}
+
+            {% if students_ahead > 5 %}
+                <span class="lane-more">
+                    +{{ students_ahead - 5 }} more
+                </span>
+            {% endif %}
+
+            <span class="lane-you">You</span>
+        </div>
+
+        <p class="lane-caption">
+            {{ students_ahead }} ahead of you.
+            {% if students_ahead > 5 %}
+                The diagram groups the extra places.
+            {% endif %}
+        </p>
 
         <p>
             Stay nearby when your turn approaches.
@@ -57,14 +86,14 @@
     </section>
 
 {% elif token["status"] == "serving" %}
-    <section class="card">
+    <section class="card turn-card alert-turn" role="alert">
         <p class="eyebrow">Now serving {{ token_number }}</p>
         <h2>It is your turn!</h2>
         <p>Please come to the office counter with your documents ready.</p>
     </section>
 
 {% elif token["status"] == "completed" %}
-    <section class="card">
+    <section class="card done-card">
         <h2>Your service is complete</h2>
         <p>Thank you for using Queue Busters.</p>
 
@@ -74,7 +103,7 @@
     </section>
 
 {% elif token["status"] == "skipped" %}
-    <section class="card">
+    <section class="card done-card">
         <h2>Your turn was skipped</h2>
 
         <p>

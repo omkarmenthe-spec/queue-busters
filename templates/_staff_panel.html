@@ -1,12 +1,14 @@
-<div class="stats">
+{% set done = tokens | selectattr("status", "equalto", "completed") | list | length %}
+{% set skipped = tokens | selectattr("status", "equalto", "skipped") | list | length %}
+
+<div class="stats four">
     <div class="stat">
         <span class="stat-label">Waiting now</span>
         <strong class="stat-value">{{ waiting_tokens | length }}</strong>
     </div>
 
-    <div class="stat">
+    <div class="stat accent">
         <span class="stat-label">Next waiting token</span>
-
         <strong class="stat-value">
             {% if waiting_tokens %}
                 {{ "Q-%03d" | format(waiting_tokens[0]["id"]) }}
@@ -15,26 +17,67 @@
             {% endif %}
         </strong>
     </div>
+
+    <div class="stat">
+        <span class="stat-label">Completed · all saved tokens</span>
+        <strong class="stat-value">{{ done }}</strong>
+    </div>
+
+    <div class="stat">
+        <span class="stat-label">Skipped · all saved tokens</span>
+        <strong class="stat-value">{{ skipped }}</strong>
+    </div>
 </div>
 
-<section class="card">
-    <p class="eyebrow">Now serving</p>
+{% if waiting_tokens %}
+    <section class="card queue-strip-card" aria-label="Up next">
+        <h3>Up next</h3>
 
-    {% if current_token %}
-        <h2 class="token-number">
-            {{ "Q-%03d" | format(current_token["id"]) }}
-        </h2>
+        <div class="queue-strip">
+            {% for item in waiting_tokens[:8] %}
+                <span class="chip {% if loop.first %}first{% endif %}">
+                    {{ "Q-%03d" | format(item["id"]) }}
+                    <small>{{ services[item["service"]] }}</small>
+                </span>
+            {% endfor %}
+        </div>
 
-        <p>{{ services[current_token["service"]] }}</p>
+        {% if waiting_tokens | length > 8 %}
+            <p class="page-note">
+                Showing the first eight waiting tokens.
+                The full register is below.
+            </p>
+        {% endif %}
+    </section>
+{% endif %}
 
-        <div class="actions">
+{% if current_token %}
+    <section class="card serving-card">
+        <div>
+            <p class="eyebrow">
+                <span class="dot-live" aria-hidden="true"></span>
+                Now serving
+            </p>
+
+            <h2 class="token-number">
+                {{ "Q-%03d" | format(current_token["id"]) }}
+            </h2>
+
+            <p>{{ services[current_token["service"]] }}</p>
+        </div>
+
+        <div class="serving-actions">
             <form method="post"
                   action="{{ url_for('complete_token', token_id=current_token['id']) }}">
                 <input type="hidden"
                        name="csrf_token"
                        value="{{ csrf_token() }}">
 
-                <button type="submit">Complete service</button>
+                <button class="big"
+                        type="submit"
+                        data-action="complete">
+                    Complete service
+                </button>
             </form>
 
             <form method="post"
@@ -44,32 +87,46 @@
                        name="csrf_token"
                        value="{{ csrf_token() }}">
 
-                <button class="danger" type="submit">Skip absent</button>
+                <button class="danger big"
+                        type="submit"
+                        data-action="skip">
+                    Skip absent
+                </button>
             </form>
         </div>
-    {% else %}
-        <h2>Ready for the next student</h2>
-        <p class="muted">No token is currently being served.</p>
+    </section>
+{% else %}
+    <section class="card serving-card idle">
+        <div>
+            <p class="eyebrow">Now serving</p>
+            <h2>Ready for the next student</h2>
+            <p class="muted">No token is currently being served.</p>
+        </div>
 
-        <form method="post" action="{{ url_for('call_next') }}">
-            <input type="hidden"
-                   name="csrf_token"
-                   value="{{ csrf_token() }}">
+        <div class="serving-actions">
+            <form method="post"
+                  action="{{ url_for('call_next') }}">
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token() }}">
 
-            <button type="submit"
-                    {% if not waiting_tokens %}disabled{% endif %}>
-                Call next token →
-            </button>
-        </form>
-    {% endif %}
-</section>
+                <button class="big"
+                        type="submit"
+                        data-action="call-next"
+                        {% if not waiting_tokens %}disabled{% endif %}>
+                    Call next token
+                </button>
+            </form>
+        </div>
+    </section>
+{% endif %}
 
 <section class="card">
     <h2>Token register</h2>
 
     <p class="muted">
-        All services share one queue. Waiting tokens are called
-        in the order they were issued.
+        All services share one queue.
+        Waiting tokens are called in the order they were issued.
     </p>
 
     {% if tokens %}
@@ -85,8 +142,10 @@
 
                 <tbody>
                     {% for token in tokens %}
-                        <tr>
-                            <td>{{ "Q-%03d" | format(token["id"]) }}</td>
+                        <tr {% if token["status"] == "serving" %}class="row-current"{% endif %}>
+                            <td>
+                                {{ "Q-%03d" | format(token["id"]) }}
+                            </td>
                             <td>{{ services[token["service"]] }}</td>
                             <td>
                                 <span class="badge {{ token['status'] }}">
@@ -99,6 +158,9 @@
             </table>
         </div>
     {% else %}
-        <p>No tokens yet. Students can request one from the student page.</p>
+        <p>
+            No tokens yet.
+            Students can request one from the student page.
+        </p>
     {% endif %}
 </section>
