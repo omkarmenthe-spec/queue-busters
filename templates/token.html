@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Reload this page every five seconds to update queue information. -->
+    <meta http-equiv="refresh" content="5">
+
+    <title>{{ token_number }} | Queue Busters</title>
+</head>
+<body>
+    <header>
+        <h1>Queue Busters</h1>
+        <p>Your turn. Without the line.</p>
+    </header>
+
+    <main>
+        <section>
+            <h2>Your token</h2>
+            <h1>{{ token_number }}</h1>
+
+            <p><strong>Service:</strong> {{ service_name }}</p>
+            <p>
+                <strong>Status:</strong>
+                {{ token["status"] | capitalize }}
+            </p>
+        </section>
+
+        <section>
+            <h2>Now serving</h2>
+
+            {% if current_token %}
+                <p>
+                    <strong>
+                        {{ "Q-%03d" | format(current_token["id"]) }}
+                    </strong>
+                </p>
+            {% else %}
+                <p>No student is currently being served.</p>
+            {% endif %}
+        </section>
+
+        <section>
+            <h2>Your queue update</h2>
+
+            {% if token["status"] == "waiting" %}
+                <p>
+                    <strong>Position in the waiting queue:</strong>
+                    {{ waiting_position }}
+                </p>
+
+                <p>
+                    <strong>Students ahead of you:</strong>
+                    {{ students_ahead }}
+                </p>
+
+                <p>
+                    Students ahead includes anyone currently being served.
+                    Waiting position counts only students still waiting.
+                </p>
+
+                {% if students_ahead == 0 %}
+                    <p>You are next. Stay nearby and wait to be called.</p>
+                {% else %}
+                    <p>Keep this page open to follow your turn.</p>
+                {% endif %}
+
+            {% elif token["status"] == "serving" %}
+                <p>
+                    <strong>
+                        It is your turn! Please come to the office counter.
+                    </strong>
+                </p>
+
+            {% elif token["status"] == "completed" %}
+                <p>Your service is complete. Thank you!</p>
+
+            {% elif token["status"] == "skipped" %}
+                <p>
+                    You missed your turn. When you are ready,
+                    request a new token to join at the back of the queue.
+                </p>
+            {% endif %}
+        </section>
+
+        <p>This page refreshes automatically every five seconds.</p>
+
+        <a href="{{ url_for('home') }}">Back to services</a>
+    </main>
+
+    <footer>
+        <p>PRAYAS · Queue Busters · Team 104</p>
+    </footer>
+</body>
+</html>

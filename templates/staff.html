@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard | Queue Busters</title>
+</head>
+<body>
+    <header>
+        <h1>Queue Busters</h1>
+        <p>Staff dashboard</p>
+    </header>
+
+    <main>
+       {% if notice == "called" %}
+    <p role="status">The next token has been called.</p>
+
+{% elif notice == "not_called" %}
+    <p role="status">
+        No token was called. Either someone is already being
+        served or there are no waiting tokens.
+    </p>
+
+{% elif notice == "completed" %}
+    <p role="status">
+        Service completed. You can now call the next student.
+    </p>
+
+{% elif notice == "skipped" %}
+    <p role="status">
+        Token marked as absent. A returning student can request
+        a new token at the back of the queue.
+    </p>
+
+{% elif notice == "not_updated" %}
+    <p role="status">
+        This token is no longer being served. Check the current queue.
+    </p>
+{% endif %}
+
+        <section aria-labelledby="current-heading">
+            <h2 id="current-heading">Now serving</h2>
+
+            {% if current_token %}
+                <h3>
+                    {{ "Q-%03d" | format(current_token["id"]) }}
+                </h3>
+                <p>{{ services[current_token["service"]] }}</p>
+                <form
+    action="{{ url_for('complete_token', token_id=current_token['id']) }}"
+    method="post"
+>
+    <button type="submit">Complete service</button>
+</form>
+
+<form
+    action="{{ url_for('skip_token', token_id=current_token['id']) }}"
+    method="post"
+    onsubmit="return confirm('Mark this student absent? They will need a new token at the back of the queue if they return.');"
+>
+    <button type="submit">Skip absent</button>
+</form>
+            {% else %}
+                <p>No student is currently being served.</p>
+            {% endif %}
+
+            <form action="{{ url_for('call_next') }}" method="post">
+                <button
+                    type="submit"
+                    {% if current_token %}disabled{% endif %}
+                >
+                    Call next
+                </button>
+            </form>
+
+            {% if current_token %}
+                <p>
+                    Finish the current visit before calling another student.
+                </p>
+            {% endif %}
+        </section>
+
+        <section aria-labelledby="register-heading">
+            <h2 id="register-heading">Token register</h2>
+
+            {% if tokens %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Token</th>
+                            <th scope="col">Service</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for token in tokens %}
+                            <tr>
+                                <td>
+                                    {{ "Q-%03d" | format(token["id"]) }}
+                                </td>
+                                <td>{{ services[token["service"]] }}</td>
+                                <td>
+                                    {{ token["status"] | capitalize }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No tokens have been issued yet.</p>
+            {% endif %}
+        </section>
+
+        <p>
+            <a href="{{ url_for('staff_dashboard') }}">
+                Refresh dashboard
+            </a>
+        </p>
+
+        <a href="{{ url_for('home') }}">Open student page</a>
+    </main>
+</body>
+</html>
