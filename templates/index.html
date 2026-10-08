@@ -3,38 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Queue Busters</title>
+    <title>Choose a service | Queue Busters</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header>
-        <h1>Queue Busters</h1>
-        <p>Your turn. Without the line.</p>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="{{ url_for('home') }}">
+                <span class="brand-mark" aria-hidden="true">QB</span>
+                Queue Busters
+            </a>
+            <nav aria-label="Main navigation">
+                <a href="{{ url_for('staff_dashboard') }}">Staff dashboard</a>
+            </nav>
+        </div>
     </header>
 
-    <main>
-        <h2>Choose your office service</h2>
+    <main class="container narrow">
+        <section class="hero">
+            <p class="eyebrow">College office queue</p>
+            <h1>Your turn.<br>Without the line.</h1>
+            <p class="muted">
+                Choose your service, get a token, and follow your
+                queue position from this device.
+            </p>
+            <ol class="steps">
+                <li>Select a service</li>
+                <li>Get your token</li>
+                <li>Follow your turn</li>
+            </ol>
+        </section>
 
         {% if error %}
-            <p role="alert">{{ error }}</p>
+            <div class="notice error" role="alert">{{ error }}</div>
         {% endif %}
 
-        <form action="{{ url_for('create_token') }}" method="post">
-            <label for="service">Service</label>
+        <section class="card">
+            <form action="{{ url_for('create_token') }}" method="post">
+                <fieldset>
+                    <legend>What brings you here?</legend>
 
-            <select id="service" name="service" required>
-                <option value="">Select a service</option>
+                    <div class="service-grid">
+                        {% for code, name in services.items() %}
+                            <label class="service-option">
+                                <input type="radio"
+                                       name="service"
+                                       value="{{ code }}"
+                                       required>
+                                <span>{{ name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
 
-                {% for code, name in services.items() %}
-                    <option value="{{ code }}">{{ name }}</option>
-                {% endfor %}
-            </select>
+                <button type="submit">Get my token →</button>
+            </form>
+        </section>
 
-            <button type="submit">Get my token</button>
-        </form>
+        <p class="muted">
+            All services currently share one queue and one counter.
+            Keep your token page open and stay nearby when your turn approaches.
+        </p>
+        <p class="muted">
+            Digital queuing helps reduce physical crowding.
+            Office processing time still depends on the service required.
+        </p>
     </main>
 
-    <footer>
-        <p>PRAYAS · Queue Busters · Team 104</p>
-    </footer>
+    <footer>PRAYAS · Queue Busters · Team 104</footer>
 </body>
 </html>

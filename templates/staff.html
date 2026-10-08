@@ -3,122 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Dashboard | Queue Busters</title>
+    <title>Staff dashboard | Queue Busters</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header>
-        <h1>Queue Busters</h1>
-        <p>Staff dashboard</p>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="{{ url_for('home') }}">
+                <span class="brand-mark" aria-hidden="true">QB</span>
+                Queue Busters
+            </a>
+
+            <div class="actions">
+                <a href="{{ url_for('home') }}">Student page</a>
+
+                <form method="post" action="{{ url_for('staff_logout') }}">
+                    <input type="hidden"
+                           name="csrf_token"
+                           value="{{ csrf_token() }}">
+                    <button class="secondary" type="submit">Log out</button>
+                </form>
+            </div>
+        </div>
     </header>
 
-    <main>
-       {% if notice == "called" %}
-    <p role="status">The next token has been called.</p>
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">Office counter · Staff workspace</p>
+            <h1>Keep the queue moving.</h1>
+            <p class="muted">
+                Call the next waiting token, complete a service,
+                or skip an absent student.
+            </p>
+        </section>
 
-{% elif notice == "not_called" %}
-    <p role="status">
-        No token was called. Either someone is already being
-        served or there are no waiting tokens.
-    </p>
+        {% set notices = {
+            "called": "The next waiting token has been called.",
+            "not_called": "No token was called. The counter may be busy, or the waiting queue is empty.",
+            "completed": "The service has been marked complete.",
+            "skipped": "The token has been marked skipped.",
+            "not_updated": "The token was not updated. It may already have changed. Check the current queue below."
+        } %}
 
-{% elif notice == "completed" %}
-    <p role="status">
-        Service completed. You can now call the next student.
-    </p>
+        {% if notice in notices %}
+            <div class="notice" role="status">{{ notices[notice] }}</div>
+        {% endif %}
 
-{% elif notice == "skipped" %}
-    <p role="status">
-        Token marked as absent. A returning student can request
-        a new token at the back of the queue.
-    </p>
+        {% set waiting_tokens =
+            tokens | selectattr("status", "equalto", "waiting") | list %}
 
-{% elif notice == "not_updated" %}
-    <p role="status">
-        This token is no longer being served. Check the current queue.
-    </p>
-{% endif %}
+        <div class="stats">
+            <div class="stat">
+                <span class="stat-label">Waiting now</span>
+                <strong class="stat-value">{{ waiting_tokens | length }}</strong>
+            </div>
 
-        <section aria-labelledby="current-heading">
-            <h2 id="current-heading">Now serving</h2>
+            <div class="stat">
+                <span class="stat-label">Next waiting token</span>
+                <strong class="stat-value">
+                    {% if waiting_tokens %}
+                        {{ "Q-%03d" | format(waiting_tokens[0]["id"]) }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </strong>
+            </div>
+        </div>
+
+        <section class="card">
+            <p class="eyebrow">Now serving</p>
 
             {% if current_token %}
-                <h3>
+                <h2 class="token-number">
                     {{ "Q-%03d" | format(current_token["id"]) }}
-                </h3>
+                </h2>
                 <p>{{ services[current_token["service"]] }}</p>
-                <form
-    action="{{ url_for('complete_token', token_id=current_token['id']) }}"
-    method="post"
->
-    <button type="submit">Complete service</button>
-</form>
 
-<form
-    action="{{ url_for('skip_token', token_id=current_token['id']) }}"
-    method="post"
-    onsubmit="return confirm('Mark this student absent? They will need a new token at the back of the queue if they return.');"
->
-    <button type="submit">Skip absent</button>
-</form>
+                <div class="actions">
+                    <form method="post"
+                          action="{{ url_for('complete_token', token_id=current_token['id']) }}">
+                        <input type="hidden"
+                               name="csrf_token"
+                               value="{{ csrf_token() }}">
+                        <button type="submit">Complete service</button>
+                    </form>
+
+                    <form method="post"
+                          action="{{ url_for('skip_token', token_id=current_token['id']) }}"
+                          onsubmit="return confirm('Skip this absent student? They will need a new token to join at the back of the queue.');">
+                        <input type="hidden"
+                               name="csrf_token"
+                               value="{{ csrf_token() }}">
+                        <button class="danger" type="submit">Skip absent</button>
+                    </form>
+                </div>
             {% else %}
-                <p>No student is currently being served.</p>
-            {% endif %}
+                <h2>Ready for the next student</h2>
+                <p class="muted">No token is currently being served.</p>
 
-            <form action="{{ url_for('call_next') }}" method="post">
-                <button
-                    type="submit"
-                    {% if current_token %}disabled{% endif %}
-                >
-                    Call next
-                </button>
-            </form>
-
-            {% if current_token %}
-                <p>
-                    Finish the current visit before calling another student.
-                </p>
+                <form method="post" action="{{ url_for('call_next') }}">
+                    <input type="hidden"
+                           name="csrf_token"
+                           value="{{ csrf_token() }}">
+                    <button type="submit"
+                            {% if not waiting_tokens %}disabled{% endif %}>
+                        Call next token →
+                    </button>
+                </form>
             {% endif %}
         </section>
 
-        <section aria-labelledby="register-heading">
-            <h2 id="register-heading">Token register</h2>
+        <section class="card">
+            <h2>Token register</h2>
+            <p class="muted">
+                All services share one queue. Waiting tokens are called
+                in the order they were issued.
+            </p>
 
             {% if tokens %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th scope="col">Token</th>
-                            <th scope="col">Service</th>
-                            <th scope="col">Status</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% for token in tokens %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
                             <tr>
-                                <td>
-                                    {{ "Q-%03d" | format(token["id"]) }}
-                                </td>
-                                <td>{{ services[token["service"]] }}</td>
-                                <td>
-                                    {{ token["status"] | capitalize }}
-                                </td>
+                                <th scope="col">Token</th>
+                                <th scope="col">Service</th>
+                                <th scope="col">Status</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for token in tokens %}
+                                <tr>
+                                    <td>{{ "Q-%03d" | format(token["id"]) }}</td>
+                                    <td>{{ services[token["service"]] }}</td>
+                                    <td>
+                                        <span class="badge {{ token['status'] }}">
+                                            {{ token["status"] | capitalize }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
-                <p>No tokens have been issued yet.</p>
+                <p>No tokens yet. Students can request one from the student page.</p>
             {% endif %}
         </section>
 
-        <p>
-            <a href="{{ url_for('staff_dashboard') }}">
-                Refresh dashboard
-            </a>
+        <a class="button secondary" href="{{ url_for('staff_dashboard') }}">
+            Refresh dashboard
+        </a>
+        <p class="muted" style="margin-top:16px;">
+            Refresh to see newly issued tokens.
+            Staff actions also reload the latest queue.
         </p>
-
-        <a href="{{ url_for('home') }}">Open student page</a>
     </main>
+
+    <footer>PRAYAS · Queue Busters · Team 104</footer>
 </body>
 </html>

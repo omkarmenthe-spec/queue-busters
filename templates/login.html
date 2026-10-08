@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff login | Queue Busters</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="{{ url_for('home') }}">
+                <span class="brand-mark" aria-hidden="true">QB</span>
+                Queue Busters
+            </a>
+            <nav aria-label="Main navigation">
+                <a href="{{ url_for('home') }}">Student page</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container narrow">
+        <section class="hero">
+            <p class="eyebrow">Office staff</p>
+            <h1>Welcome to your counter.</h1>
+            <p class="muted">
+                Sign in to manage the queue and update token status.
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>Staff login</h2>
+
+            {% if error %}
+                <div class="notice error" role="alert">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" action="{{ url_for('staff_login') }}">
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <p>
+                    <label for="password">Staff password</label>
+                </p>
+
+                <p>
+                    <input id="password"
+                           name="password"
+                           type="password"
+                           autocomplete="current-password"
+                           required
+                           style="width:100%; padding:12px; border:1px solid #627087; border-radius:10px;">
+                </p>
+
+                <button type="submit">Log in →</button>
+            </form>
+        </section>
+
+        <p class="muted">
+            Students can request tokens without logging in.
+        </p>
+    </main>
+
+    <footer>PRAYAS · Queue Busters · Team 104</footer>
+</body>
+</html>

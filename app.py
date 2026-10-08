@@ -1,5 +1,8 @@
+import json
+import secrets
 import sqlite3
 from contextlib import closing
+from datetime import timedelta
 from pathlib import Path
 
 from flask import (
@@ -8,12 +11,14 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
     url_for,
 )
+from werkzeug.security import check_password_hash
+
 
 app = Flask(__name__)
 
-# Available college office services.
 SERVICES = {
     "bonafide": "Bonafide certificate",
     "fees": "Fee enquiry",
@@ -21,15 +26,35 @@ SERVICES = {
     "verification": "Document verification",
 }
 
-# Store the database inside the project's instance folder.
 DATA_FOLDER = Path(app.root_path) / "instance"
 DATA_FOLDER.mkdir(exist_ok=True)
 
 DATABASE = DATA_FOLDER / "queue.db"
+STAFF_CONFIG = DATA_FOLDER / "staff_config.json"
+
+staff_configuration = {}
+
+if STAFF_CONFIG.exists():
+    staff_configuration = json.loads(
+        STAFF_CONFIG.read_text(encoding="utf-8")
+    )
+
+# Staff access stays disabled until setup_staff.py has been run.
+STAFF_PASSWORD_HASH = staff_configuration.get("password_hash")
+
+app.config.update(
+    SECRET_KEY=staff_configuration.get("secret_key") or secrets.token_hex(32),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    # Local demo currently uses HTTP. Enable Secure when deploying with HTTPS.
+    SESSION_COOKIE_SECURE=False,
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=1),
+    SESSION_REFRESH_EACH_REQUEST=False,
+    MAX_CONTENT_LENGTH=16 * 1024,
+)
 
 
 def init_database():
-    """Create the table while preserving existing tokens."""
     with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS tokens (
@@ -42,18 +67,107 @@ def init_database():
         connection.commit()
 
 
+def csrf_token():
+    """Create a random security token for this browser session."""
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_hex(32)
+
+    return session["csrf_token"]
+
+
+app.jinja_env.globals["csrf_token"] = csrf_token
+
+
+@app.before_request
+def protect_staff_routes():
+    """Protect the dashboard and every staff action on the server."""
+    is_staff_path = (
+        request.path == "/staff"
+        or request.path.startswith("/staff/")
+    )
+
+    if not is_staff_path:
+        return None
+
+    if not STAFF_PASSWORD_HASH:
+        abort(
+            503,
+            description=(
+                "Staff access is not configured. "
+                "Run setup_staff.py and restart the application."
+            ),
+        )
+
+    if request.endpoint != "staff_login" and not session.get("staff"):
+        return redirect(url_for("staff_login"), code=303)
+
+    if request.method == "POST":
+        expected = session.get("csrf_token", "")
+        supplied = request.form.get("csrf_token", "")
+
+        if not expected or not secrets.compare_digest(expected, supplied):
+            abort(
+                400,
+                description=(
+                    "This form expired or could not be verified. "
+                    "Reload the page and try again."
+                ),
+            )
+
+    return None
+
+
+@app.after_request
+def response_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+
+    if request.path == "/staff" or request.path.startswith("/staff/"):
+        response.headers["Cache-Control"] = "no-store"
+
+    return response
+
+
+@app.route("/staff/login", methods=["GET", "POST"])
+def staff_login():
+    if session.get("staff"):
+        return redirect(url_for("staff_dashboard"))
+
+    error = None
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+
+        if check_password_hash(STAFF_PASSWORD_HASH, password):
+            session.clear()
+            session["staff"] = True
+            session.permanent = True
+            csrf_token()
+
+            return redirect(url_for("staff_dashboard"), code=303)
+
+        error = "Incorrect password. Please try again."
+
+    return render_template(
+        "login.html",
+        error=error,
+    ), (401 if error else 200)
+
+
+@app.post("/staff/logout")
+def staff_logout():
+    session.clear()
+    return redirect(url_for("staff_login"), code=303)
+
+
 @app.get("/")
 def home():
-    """Display the student service-selection page."""
-    return render_template(
-        "index.html",
-        services=SERVICES,
-    )
+    return render_template("index.html", services=SERVICES)
 
 
 @app.post("/tokens")
 def create_token():
-    """Validate the selected service and generate a token."""
     service = request.form.get("service", "")
 
     if service not in SERVICES:
@@ -68,7 +182,6 @@ def create_token():
             "INSERT INTO tokens (service) VALUES (?)",
             (service,),
         )
-
         token_id = cursor.lastrowid
         connection.commit()
 
@@ -80,11 +193,8 @@ def create_token():
 
 @app.get("/tokens/<int:token_id>")
 def view_token(token_id):
-    """Display a token, the current serving token and queue position."""
     with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
         connection.row_factory = sqlite3.Row
-
-        # Read the queue information from one consistent snapshot.
         connection.execute("BEGIN")
 
         token = connection.execute(
@@ -95,15 +205,13 @@ def view_token(token_id):
         if token is None:
             abort(404)
 
-        current_token = connection.execute(
-            """
+        current_token = connection.execute("""
             SELECT *
             FROM tokens
             WHERE status = 'serving'
             ORDER BY id ASC
             LIMIT 1
-            """
-        ).fetchone()
+        """).fetchone()
 
         waiting_before = connection.execute(
             """
@@ -119,10 +227,7 @@ def view_token(token_id):
 
     if token["status"] == "waiting":
         waiting_position = waiting_before + 1
-        students_ahead = waiting_before
-
-        if current_token is not None:
-            students_ahead += 1
+        students_ahead = waiting_before + int(current_token is not None)
 
     return render_template(
         "token.html",
@@ -137,10 +242,8 @@ def view_token(token_id):
 
 @app.get("/staff")
 def staff_dashboard():
-    """Display all tokens and the token currently being served."""
     with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
         connection.row_factory = sqlite3.Row
-
         tokens = connection.execute(
             "SELECT * FROM tokens ORDER BY id ASC"
         ).fetchall()
@@ -161,7 +264,6 @@ def staff_dashboard():
 
 @app.post("/staff/call-next")
 def call_next():
-    """Call the earliest waiting token only when the counter is free."""
     with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
         cursor = connection.execute("""
             UPDATE tokens
@@ -174,72 +276,54 @@ def call_next():
                 LIMIT 1
             )
             AND NOT EXISTS (
-                SELECT 1
-                FROM tokens
-                WHERE status = 'serving'
+                SELECT 1 FROM tokens WHERE status = 'serving'
             )
         """)
-
         called = cursor.rowcount == 1
         connection.commit()
 
-    notice = "called" if called else "not_called"
+    return redirect(
+        url_for(
+            "staff_dashboard",
+            notice="called" if called else "not_called",
+        ),
+        code=303,
+    )
+
+
+def finish_current_token(token_id, new_status):
+    with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
+        cursor = connection.execute(
+            """
+            UPDATE tokens
+            SET status = ?
+            WHERE id = ? AND status = 'serving'
+            """,
+            (new_status, token_id),
+        )
+        changed = cursor.rowcount == 1
+        connection.commit()
 
     return redirect(
-        url_for("staff_dashboard", notice=notice),
+        url_for(
+            "staff_dashboard",
+            notice=new_status if changed else "not_updated",
+        ),
         code=303,
     )
 
 
 @app.post("/staff/complete/<int:token_id>")
 def complete_token(token_id):
-    """Complete a token only if it is currently being served."""
-    with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
-        cursor = connection.execute(
-            """
-            UPDATE tokens
-            SET status = 'completed'
-            WHERE id = ? AND status = 'serving'
-            """,
-            (token_id,),
-        )
-
-        changed = cursor.rowcount == 1
-        connection.commit()
-
-    notice = "completed" if changed else "not_updated"
-
-    return redirect(
-        url_for("staff_dashboard", notice=notice),
-        code=303,
-    )
+    return finish_current_token(token_id, "completed")
 
 
 @app.post("/staff/skip/<int:token_id>")
 def skip_token(token_id):
-    """Mark the currently serving token as skipped."""
-    with closing(sqlite3.connect(DATABASE, timeout=15)) as connection:
-        cursor = connection.execute(
-            """
-            UPDATE tokens
-            SET status = 'skipped'
-            WHERE id = ? AND status = 'serving'
-            """,
-            (token_id,),
-        )
-
-        changed = cursor.rowcount == 1
-        connection.commit()
-
-    notice = "skipped" if changed else "not_updated"
-
-    return redirect(
-        url_for("staff_dashboard", notice=notice),
-        code=303,
-    )
+    return finish_current_token(token_id, "skipped")
 
 
 init_database()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True)   
